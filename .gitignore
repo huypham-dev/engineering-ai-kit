@@ -1,0 +1,5 @@
+# claude plugin eval output
+plugins/*/evals/results/
+# local Claude Code settings
+.claude/settings.local.json
+.DS_Store

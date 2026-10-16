@@ -1,0 +1,12 @@
+{
+  "name": "engineering-ai",
+  "displayName": "Engineering AI",
+  "version": "0.1.0",
+  "description": "Company-wide developer workflow for Claude Code: onboard a repo, plan a ticket, implement an approved plan, review the diff, and draft a PR, with explicit human approval checkpoints.",
+  "author": {
+    "name": "huypham-dev"
+  },
+  "repository": "https://github.com/huypham-dev/engineering-ai-kit",
+  "license": "UNLICENSED",
+  "keywords": ["workflow", "planning", "code-review", "pull-request", "onboarding"]
+}

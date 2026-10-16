@@ -1,0 +1,18 @@
+{
+  "description": "engineering-ai guard: blocks destructive git operations and PR merges, asks before git push / PR creation / likely secret files",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/guard.sh"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

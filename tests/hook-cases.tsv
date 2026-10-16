@@ -1,0 +1,70 @@
+# expected	tool	command-or-file_path   (TAB separated; expected = deny | ask | none)
+# --- destructive git: deny
+deny	Bash	git push --force origin main
+deny	Bash	git push -f
+deny	Bash	git push --force-with-lease origin feat
+deny	Bash	git push origin +main
+deny	Bash	git push origin :old-branch
+deny	Bash	git push --delete origin feat
+deny	Bash	git -C ../other push --force
+deny	Bash	cd app && git reset --hard HEAD~1
+deny	Bash	git reset --hard
+deny	Bash	git clean -fd
+deny	Bash	git clean -xdf
+deny	Bash	git checkout -- .
+deny	Bash	git checkout -- src/app.ts
+deny	Bash	git checkout .
+deny	Bash	git restore src/app.ts
+deny	Bash	git restore --staged --worktree src/app.ts
+deny	Bash	git branch -D feature/x
+deny	Bash	git branch --delete --force feature/x
+deny	Bash	git stash drop
+deny	Bash	git stash clear
+deny	Bash	git filter-branch --tree-filter 'rm x' HEAD
+deny	Bash	gh pr merge 12 --squash
+deny	Bash	npm test; git reset --hard
+deny	Bash	(git clean -f)
+deny	Bash	sudo git reset --hard
+# --- needs confirmation: ask
+ask	Bash	git push
+ask	Bash	git push -u origin feature/login
+ask	Bash	git -C repo push origin HEAD
+ask	Bash	gh pr create --fill
+ask	Bash	git rebase main
+ask	Bash	cat .env
+ask	Bash	cp .env.production /tmp/x
+ask	Bash	cat ~/.ssh/id_rsa
+ask	Read	/repo/.env
+ask	Read	/repo/.env.local
+ask	Read	/repo/certs/server.pem
+ask	Edit	/repo/config/private.key
+ask	Write	/home/u/.ssh/id_ed25519
+ask	Read	/repo/credentials.json
+ask	Read	/repo/.envrc
+# --- allowed: no decision
+none	Bash	git status
+none	Bash	git diff HEAD
+none	Bash	git log --oneline -20
+none	Bash	git add src/a.ts
+none	Bash	git commit -m "fix: avoid git reset --hard in docs; push later"
+none	Bash	git restore --staged src/app.ts
+none	Bash	git checkout -b feature/x
+none	Bash	git switch main
+none	Bash	git branch -d merged-branch
+none	Bash	git stash
+none	Bash	git stash list
+none	Bash	git clean -n
+none	Bash	git fetch origin
+none	Bash	npm run lint && npm test
+none	Bash	pnpm test --filter web
+none	Bash	echo push --force
+none	Bash	gh pr view 12
+none	Bash	cat .env.example
+none	Bash	grep -r TODO src
+none	Read	/repo/.env.example
+none	Read	/repo/src/env.ts
+none	Read	/repo/keys.ts
+none	Read	/home/u/.ssh/id_rsa.pub
+none	Edit	/repo/src/app.tsx
+none	Write	/repo/README.md
+none	Glob	**/*.env

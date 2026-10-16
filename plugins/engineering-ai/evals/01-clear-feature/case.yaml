@@ -1,0 +1,21 @@
+schema_version: "1.1"
+name: 01-clear-feature
+description: >-
+  Clear feature with explicit acceptance criteria -> scoped plan, real commands, approval request, no edits.
+expected_outcome: >-
+  A READY FOR APPROVAL plan naming src/cart.js and test/cart.test.js, verification via `npm test` (from package.json), and the approval line. No files modified.
+tags: [plan, smoke]
+runs: 3
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Ticket SHOP-101: Add a removeItem(cart, sku) function to the cart module.
+    Acceptance criteria:
+    1. removeItem removes the line item with the given sku and returns the cart.
+    2. If the sku is not in the cart, the cart is returned unchanged (no error).
+    3. Covered by unit tests.
+    Please plan this for me before anyone writes code.

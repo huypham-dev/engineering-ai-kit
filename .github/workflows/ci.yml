@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-checks:
+    # No model calls and no secrets: manifest validation, skill structure,
+    # guard hook unit tests. Model-driven evals run manually (see docs/testing.md).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Claude Code CLI (for `claude plugin validate`)
+        # Pinned so validator changes don't break CI unexpectedly; bump deliberately.
+        run: npm install -g @anthropic-ai/claude-code@2.1.301
+
+      - name: Check guard script syntax
+        run: bash -n plugins/engineering-ai/scripts/guard.sh
+
+      - name: Run deterministic test suite
+        run: tests/run.sh

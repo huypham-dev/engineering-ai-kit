@@ -1,0 +1,14 @@
+{
+  "name": "engineering-ai-kit",
+  "description": "Internal Claude Code plugins for engineering teams",
+  "owner": {
+    "name": "huypham-dev"
+  },
+  "plugins": [
+    {
+      "name": "engineering-ai",
+      "source": "./plugins/engineering-ai",
+      "description": "Ticket-to-PR developer workflow: onboard, plan, implement, review, prepare PR"
+    }
+  ]
+}
