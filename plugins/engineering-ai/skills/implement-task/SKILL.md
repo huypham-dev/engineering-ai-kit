@@ -21,6 +21,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/standards/coding.md`, `${CLAUDE_PLUGIN_ROOT}/stand
 - Edit only files in the approved scope. Do not refactor, rename or reformat unrelated code.
 - No new dependencies, public contract changes, or config/CI changes unless the plan lists them.
 - Do not commit, push, or create branches unless the developer asks.
+- Change files with the Edit/Write tools, not shell redirection (`cat >`, `sed -i`, `tee`), so every change is visible and reviewable.
 
 ## Procedure
 1. For a bugfix: first add or run the test that reproduces the bug and confirm it **fails for the expected reason**. Record the command and output.
@@ -31,6 +32,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/standards/coding.md`, `${CLAUDE_PLUGIN_ROOT}/stand
 
 ## Stop conditions — stop and report, do not continue
 - **Scope change:** the correct fix needs a file, module, dependency, schema or API outside the approved plan. Explain what and why, propose a plan amendment, and wait for approval.
+- **Root cause outside scope:** the real cause is in code outside the approved scope. Do **not** work around it inside the scope (duplicating logic, special-casing, bypassing the shared code), even if the workaround would make the tests pass. Stop, explain the root cause, and offer the options (amend the scope vs. a local workaround, with trade-offs) for the developer to choose.
 - **Requirement change:** you discover the plan's assumptions are wrong.
 - **Repeated failure:** a check still fails after 2 attempts.
 - **Cannot verify:** a required check cannot run (missing tool, service, network). Report COULD NOT RUN; do not claim success.

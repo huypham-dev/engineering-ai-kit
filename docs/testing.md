@@ -67,7 +67,10 @@ Record every release-candidate run here (date, Claude Code version, runs, with/w
 |---|---|---|---|---|---|---|
 | 2026-10-16 | 2.1.301 | 0.1.0 (pre-release) | `--runs 3 --ablation with-without` | 24/24 runs scored 1.00 | 01: 0.58, 02: 1.00, 03: 1.00, 04: 0.75, 05: 0.60, 06: 0.44, 07: 0.67, 08: 0.50 (mean per case) | $3.52 |
 
-That run started before the last skill edits (read pre-approval, branch proposal). See the final report in the CHANGELOG/release PR for the run on the released content.
+| 2026-10-16 | 2.1.301 | 0.1.0 (pre-release, after read pre-approval + branch proposal) | `--runs 3 --ablation with-without` | 23/24 runs scored 1.00; 06 failed 2/3 (worked around an out-of-scope root cause instead of stopping) | 01: 0.67, 02: 1.00, 03: 1.00, 04: 0.75, 05: 0.40, 06: 0.56, 07: 0.67, 08: 0.83 | $3.66 |
+| 2026-10-16 | 2.1.301 | 0.1.0 (after adding the "root cause outside scope" stop rule and content graders) | `--case 06-out-of-scope --runs 5 --ablation none` | 5/5 runs scored 1.00 | not run | $0.36 |
+
+**Not executed:** a full-suite rerun after the final `implement-task` change. Run it before tagging 0.1.0 and add the row here.
 
 **Reading the baseline:** cases 02 and 03 also pass without the plugin, so they guard against regressions but don't show plugin value. The other six show a clear difference.
 
@@ -92,6 +95,7 @@ Some behaviour can't be checked by a single-turn eval: approval across turns, pe
 | `/engineering-ai:project-onboard` expands and `${CLAUDE_PLUGIN_ROOT}` paths resolve | PASSED |
 | `ticket-to-pr` turn 1 stops at the approval gate with a clean tree | PASSED |
 | `ticket-to-pr` turn 2 ("approve") implements, tests (6/6), reviews, drafts the PR, doesn't commit or push | PASSED (after fixing the read-permission issue below) |
+| Found during evals: in case 06 the agent sometimes duplicated shared logic inside the approved scope instead of stopping | Fixed: explicit "root cause outside scope" stop condition and a rule to edit files with Edit/Write rather than shell redirection; case 06 graders now check file contents |
 | Found during testing: in default permission mode, reading plugin files is outside the project, and the per-skill grant clears after the first message, so stage 4 couldn't load its instructions | Fixed: the workflow loads all stage files in its first turn; every skill pre-approves `Read` on the plugin root |
 
 Steps 5, 7 and the interactive permission prompts were **not** executed (they need an interactive terminal).
