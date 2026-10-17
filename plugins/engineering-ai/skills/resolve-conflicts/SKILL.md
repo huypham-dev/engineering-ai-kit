@@ -29,26 +29,27 @@ Read a side with `git show :1:<path>`, `git show :2:<path>`, `git show :3:<path>
 
 ## 1. Inspect (read-only)
 1. `git status`, `git branch --show-current`, `git log --oneline -5`.
-2. **A rebase is already in progress** (status says so): the developer started it. Report the current state (which commit is being replayed, conflicted files) and continue at step 4 once they confirm. **A merge is in progress:** say that this skill resolves by rebasing, and ask whether they want to abort the merge themselves (`git merge --abort`). Do not abort it yourself.
+2. **A rebase is already in progress** (status says so): the developer started it, so there is no plan or backup yet, and `git branch --show-current` prints nothing. Recover the facts from the rebase state directory (`git rev-parse --git-path rebase-merge`, or `rebase-apply` if that one exists): Read its `head-name` (`refs/heads/<branch>`), `onto` (the commit being rebased onto) and `orig-head` (the branch tip before the rebase). Use `onto` as `<base>` for the rest of this skill. If a base argument was given or a default was chosen in step 4 and it does not resolve to `onto` (`git rev-parse <ref>`), say so and ask which one is meant. Then report a short plan: the current state (which commit is being replayed, conflicted files, your read-only analysis from 4a), the backup to create at `orig-head` (`git branch <backup> <orig-head sha>`, named as in step 5), lockfile regeneration commands and verification commands (found as in step 5). Once they confirm, that confirmation is the approved plan: create the backup, then continue at step 4. **A merge is in progress:** say that this skill resolves by rebasing, and ask whether they want to abort the merge themselves (`git merge --abort`). Do not abort it yourself.
 3. Stop and ask if:
    - the working tree has uncommitted or untracked changes. A rebase needs a clean tree, and you never stash, commit or discard them on your own. List them and offer the options (the developer commits them, or approves `git stash push -u` with a later `git stash pop`);
    - the current branch is the default/protected branch (`main`, `master`, `develop`, release branches). Rebasing those rewrites shared history.
 4. Determine the base: the argument if given; otherwise the upstream default branch (`git symbolic-ref refs/remotes/origin/HEAD`, else `origin/main` or `origin/master` if present). Say which base you chose and why. If the remote-tracking ref may be stale, propose `git fetch origin <base-branch>` as part of the plan. Do not fetch before approval.
 5. Gather facts:
    - Commits to replay: `git log --oneline --reverse <base>..HEAD`. Commits the base has gained: `git log --oneline HEAD..<base>`. If the first list is empty, there is nothing to rebase: report it and stop. If the second list is empty, the branch is already up to date: report it and stop.
-   - Predicted conflicts: `git merge-tree --write-tree --name-only --no-messages <base> HEAD` (git ≥ 2.38, read-only; exit code 1 means conflicts, and the paths after the first line are the conflicted files). If it is unavailable, say "not predicted".
+   - Predicted conflicts: `git merge-tree --write-tree --name-only --no-messages <base> HEAD` (git ≥ 2.38, read-only; exit code 1 means conflicts, and the paths after the first line are the conflicted files). If it is unavailable, say "not predicted". This merges the final tips only; a rebase replays commit by commit, so an intermediate commit can still conflict (for example one that a later commit reverts). Say so in the plan.
    - Shared branch? Check whether the branch has an upstream (`git rev-parse --abbrev-ref @{u}`) and who else committed on it (`git log --format='%an' <base>..HEAD | sort -u`). A rebased branch that was already pushed needs a force-push, which this plugin never does. If other people have commits on it, recommend against rebasing and ask.
    - Lockfiles or generated files among the predicted conflicts, and the repo's command to regenerate them (from package scripts, docs or CONTRIBUTING; never invented).
+   - Backup name: `backup/<branch>-pre-rebase`. If that branch already exists (`git rev-parse --verify --quiet refs/heads/backup/<branch>-pre-rebase`), it is from an earlier run: do not reuse, overwrite or delete it. Pick a free name with a date suffix (`backup/<branch>-pre-rebase-<YYYYMMDD>`) and use it as `<backup>` everywhere below.
 
 ## 2. Plan and wait for approval
 ```
 ## Rebase plan: <branch> onto <base>   Status: READY FOR APPROVAL | BLOCKED — <reason>
-Base: <ref> (<why this base>)  · fetch first: yes (`git fetch origin <branch>`) | no
+Base: <ref> (<why this base>)  · fetch first: yes (`git fetch origin <base-branch>`) | no
 Commits to replay (<n>): <sha> <subject> …
 Base has gained (<m>): <sha> <subject> …
-Predicted conflicts: <paths> | none | not predicted
+Predicted conflicts: <paths> | none | not predicted (final tips only; intermediate commits may still conflict)
 Lockfiles / generated files: <path> → regenerate with `<command>` (<source>) | none
-Backup: `git branch backup/<branch>-pre-rebase` (restore point; the developer deletes it later)
+Backup: `git branch <backup>` (restore point; the developer deletes it later)
 Pushed already: no | yes → after the rebase YOU run `git push --force-with-lease`; this plugin never force-pushes
 Other authors on the branch: none | <names> → rebasing will disrupt them
 Verification after the rebase: <discovered commands> | Not found
@@ -63,12 +64,12 @@ Do not run anything that changes the repository before an explicit approval.
 3. If it finishes without conflicts, go to step 5.
 
 ## 4. Resolve, one stopped commit at a time
-a. **Understand both sides before editing.** Identify the commit being replayed (`git rebase --show-current-patch` or `git log -1 REBASE_HEAD`), the conflicted paths (`git diff --name-only --diff-filter=U`), and what the base changed in each path (`git log --oneline <merge-base>..<base> -- <path>`, where `<merge-base>` comes from `git merge-base ORIG_HEAD <base>`). Read every conflict block with enough surrounding code.
+a. **Understand both sides before editing.** Identify the commit being replayed (`git log -1 REBASE_HEAD` and `git show REBASE_HEAD`; not `git rebase --show-current-patch`, which the guard treats like any other rebase and asks to confirm), the conflicted paths (`git diff --name-only --diff-filter=U`), and what the base changed in each path (`git log --oneline <merge-base>..<base> -- <path>`, where `<merge-base>` comes from `git merge-base ORIG_HEAD <base>`). Read every conflict block with enough surrounding code.
 b. **Classify each hunk:**
    - *Mechanical*: the two sides make independent changes (different functions added at the same spot, imports, list entries, a rename on one side next to an edit on the other). Combine them so both survive, in the order the code needs.
    - *Needs a decision*: both sides change the same logic or behaviour, one side deletes or moves what the other modifies, or the right result depends on product intent. **Stop** (see below).
 c. **Lockfiles and generated files:** never hand-edit them. Resolve their sources (e.g. the manifest) first, then regenerate them with the command from the approved plan. A regeneration that installs or upgrades dependencies beyond what the two sides already declare needs approval.
-d. **Binary files:** stop and ask which version to keep.
+d. **Binary files:** stop and ask which version to keep. Writing one side over the file is blocked by the guard and by the hard rules, so give the developer the command to run themselves: `git checkout REBASE_HEAD -- <path>` keeps the branch's version, `git checkout HEAD -- <path>` keeps the base's. Both also stage the file. Once they confirm, check `git status` and continue with 4e.
 e. **Check the result:** no conflict markers remain (`git diff --check`, and search the resolved files for `<<<<<<<`, `=======`, `>>>>>>>`). The code still parses. If the repo has a fast syntax, type or lint check for these files, run it.
 f. `git add <resolved paths>` (only those paths), then `git -c core.editor=true rebase --continue`. Before continuing, state in one or two lines per file how you resolved it.
 g. If git reports the commit became empty because the base already contains its change, show the evidence (the base commit that contains it) and ask before `git rebase --skip`.
@@ -76,7 +77,7 @@ h. Repeat for the next stopped commit.
 
 ## 5. Verify
 1. Confirm the rebase finished: `git status` shows no rebase in progress, and `git log --oneline <base>..HEAD` lists the replayed commits.
-2. Compare content with the backup. `git diff backup/<branch>-pre-rebase HEAD --stat` should show only the base's changes plus your resolutions. Explain anything else.
+2. Compare content with the backup. `git diff <backup> HEAD --stat` should show only the base's changes plus your resolutions. Explain anything else.
 3. Run the repo's verification commands per `${CLAUDE_PLUGIN_ROOT}/standards/testing.md`, narrowest first. Report every result honestly: PASSED / FAILED / NOT RUN / COULD NOT RUN.
 4. If a check fails, run the same check on `<base>`'s state only if that is cheap and safe (no checkout over the developer's work). A check that already fails on the base is a pre-existing failure: report it. A failure caused by a resolution: diagnose it, then stop and report the options. Do not rewrite history to fix it.
 
@@ -86,12 +87,12 @@ h. Repeat for the next stopped commit.
 - A verification failure after the rebase that comes from a resolution.
 - Anything outside the approved plan (a different base, extra files, new dependencies).
 
-On every stop, remind the developer how to resume (reply with a decision) and how to undo (`git rebase --abort` while in progress, or `backup/<branch>-pre-rebase` afterwards). Run either only if they ask.
+On every stop, remind the developer how to resume (reply with a decision) and how to undo (`git rebase --abort` while in progress, or `<backup>` afterwards). Run either only if they ask.
 
 ## Output
 ```
 ## Rebase report   Status: COMPLETE | STOPPED — <reason> | ABORTED (on request)
-Branch: <branch>  onto <base> @ <sha>   Backup: backup/<branch>-pre-rebase
+Branch: <branch>  onto <base> @ <sha>   Backup: <backup>
 Commits replayed: <n>/<total>   Skipped (approved): none | <sha subject — why>
 Conflicts:
 | Commit | File | Kind | Resolution |
@@ -103,5 +104,5 @@ Verification:
 |---|---|---|---|
 Next steps (for you to run):
 - `git push --force-with-lease` (only if the branch was pushed before)
-- `git branch -D backup/<branch>-pre-rebase` once you are happy with the result (`-D` is needed because the old commits are not part of the rebased branch)
+- `git branch -D <backup>` once you are happy with the result (`-D` is needed because the old commits are not part of the rebased branch)
 ```
