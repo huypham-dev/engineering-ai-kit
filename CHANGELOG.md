@@ -5,7 +5,7 @@ All notable changes to the `engineering-ai` plugin. Format: [Keep a Changelog](h
 ## [Unreleased]
 
 ### Added
-- Skill `resolve-conflicts`: brings a feature branch up to date by rebasing onto its base (never merging). Plans first with predicted conflicts and a backup branch, resolves conflicts hunk by hunk keeping both sides' intent, stops for a decision on conflicts that need judgement, and verifies with the repo's own checks. Never force-pushes.
+- Skill `resolve-conflicts`: brings a feature branch up to date by rebasing onto its base (never merging). Plans first with predicted conflicts and a backup branch, resolves conflicts hunk by hunk keeping both sides' intent, stops for a decision on conflicts that need judgement, and verifies with the repo's own checks. Never force-pushes. Before resolving it reads why each side exists (commit messages, linked PRs and issues), invents nothing that was on neither side, names anything dropped, and runs the narrowest checks before each `rebase --continue`; these steps are adapted from the archived `resolving-merge-conflicts` skill in [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
 - Eval cases `09-onboard-monorepo-focus` and `10-onboard-tricky-git-state`.
 - Eval cases `11-rebase-conflict` (plan and approval gate) and `12-rebase-decision-conflict` (stop on a semantic conflict mid-rebase).
 
