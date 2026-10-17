@@ -94,10 +94,10 @@ check_segment() {
   while :; do
     case "$seg" in
       '('*|'{'*) seg="${seg#?}"; seg="${seg#"${seg%%[![:space:]]*}"}" ;;
-      'sudo '*|'command '*|'exec '*|'time '*) seg="${seg#* }"; seg="${seg#"${seg%%[![:space:]]*}"}" ;;
+      'sudo '*|'command '*|'exec '*|'time '*|'env '*) seg="${seg#* }"; seg="${seg#"${seg%%[![:space:]]*}"}" ;;
       *)
-        # leading environment assignments, e.g. GIT_EDITOR=true git ... (unquoted values only)
-        re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+'
+        # leading environment assignments, e.g. GIT_EDITOR=true git ... or GIT_EDITOR="vim -f" git ...
+        re='^[A-Za-z_][A-Za-z0-9_]*=("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]*)[[:space:]]+'
         if [[ "$seg" =~ $re ]]; then seg="${seg#"${BASH_REMATCH[0]}"}"; else break; fi
         ;;
     esac

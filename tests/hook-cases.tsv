@@ -27,6 +27,10 @@ deny	Bash	(git clean -f)
 deny	Bash	sudo git reset --hard
 deny	Bash	GIT_EDITOR=true git push --force
 deny	Bash	FOO=1 BAR=x git reset --hard
+deny	Bash	env git push --force
+deny	Bash	env GIT_EDITOR=true git reset --hard
+deny	Bash	GIT_EDITOR="vim -f" git push --force
+deny	Bash	GIT_EDITOR='vim -f' git reset --hard
 deny	Bash	git checkout --theirs src/cart.js
 deny	Bash	git checkout --ours -- src/cart.js
 # --- needs confirmation: ask
