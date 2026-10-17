@@ -28,7 +28,7 @@ In later turns (after the developer replies), use the content you already loaded
 | 5 | Review | `${CLAUDE_PLUGIN_ROOT}/skills/review-changes/SKILL.md` | No |
 | 6 | PR draft | `${CLAUDE_PLUGIN_ROOT}/skills/prepare-pr/SKILL.md` | No |
 
-When a stage file says `$ARGUMENTS`, use the ticket (stages 1–2) or the relevant context (later stages). Ignore its frontmatter; the rules below apply instead.
+When a stage file says `$ARGUMENTS`, substitute: stage 1 (onboard) — a focus path only if the ticket names one package/directory of a monorepo, otherwise nothing (never the ticket text); stage 2 (plan) — the ticket; later stages — the relevant context. Ignore its frontmatter; the rules below apply instead.
 
 ## Stage results
 End every stage with one line: `Stage <n> result: PASS | NEEDS_INPUT | BLOCKED — <reason>`.

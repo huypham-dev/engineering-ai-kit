@@ -4,6 +4,17 @@ All notable changes to the `engineering-ai` plugin. Format: [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `project-onboard`: the focus path now scopes manifest, command and convention discovery (monorepos); `ticket-to-pr` no longer passes ticket text as the focus.
+- `project-onboard`: command status is now `Defined` / `Inferred` / `Docs only` / `Ambiguous` / `Not found` instead of a single "Verified" label; `testing.md` marks toolchain defaults such as `go test ./...` as inferred.
+- `project-onboard`: no longer reads `.claude/settings*.json` (may hold credentials); the guard now asks before reading `settings.local.json`.
+- `project-onboard`: explicit handling of non-git directories, repositories without commits and detached HEAD.
+- `project-onboard`: also reads `CLAUDE.local.md`, `.claude/CLAUDE.md` and `.claude/rules/`.
+- `project-onboard`: forbids installs, builds and code generation explicitly; pre-approves read-only git commands.
+
+### Added
+- Eval cases `09-onboard-monorepo-focus` and `10-onboard-tricky-git-state`.
+
 ## [0.1.0] - 2026-10-16
 First pilot release.
 

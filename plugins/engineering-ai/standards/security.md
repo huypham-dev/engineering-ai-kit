@@ -2,7 +2,7 @@
 
 ## Never
 - Read, print, copy, summarize or commit secrets: API keys, tokens, passwords, private keys, certificates, session cookies, production connection strings.
-- Open these files unless the developer explicitly asks and the task requires it: `.env`, `.env.*` (except `.env.example`/`.env.sample`/`.env.template`), `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa*`, `id_ed25519*`, `credentials*`, `secrets.*`, `*.keystore`, `google-services.json`/`GoogleService-Info.plist` with real values, `~/.aws`, `~/.ssh`, `~/.npmrc`, `~/.netrc`.
+- Open these files unless the developer explicitly asks and the task requires it: `.env`, `.env.*` (except `.env.example`/`.env.sample`/`.env.template`), `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa*`, `id_ed25519*`, `credentials*`, `secrets.*`, `*.keystore`, `google-services.json`/`GoogleService-Info.plist` with real values, `.envrc`, `.claude/settings.local.json` and `.claude/settings.json` (may contain `env` blocks with credentials), `~/.aws`, `~/.ssh`, `~/.npmrc`, `~/.netrc`.
 - Run commands that print the environment wholesale (`env`, `printenv`, `set`) or echo secret variables.
 - Connect to, deploy to, migrate, or run commands against production or shared environments.
 - Disable security controls (auth checks, TLS verification, CSRF protection, input validation) to make something work.

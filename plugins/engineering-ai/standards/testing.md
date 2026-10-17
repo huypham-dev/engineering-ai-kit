@@ -2,7 +2,8 @@
 
 ## Discover, never assume
 Verification commands come from the repository, not from habit. Valid sources, in order of trust:
-1. Scripts/targets actually defined in config: `package.json` `scripts`, `Makefile`, `justfile`, `Taskfile.yml`, `pyproject.toml`, `tox.ini`, `noxfile.py`, `Cargo.toml`, `go.mod` (implies `go test ./...`), `build.gradle`, `pom.xml`, `*.csproj`, `composer.json`, `Gemfile`/`Rakefile`.
+1. Scripts/targets actually defined in config: `package.json` `scripts`, `Makefile`, `justfile`, `Taskfile.yml`, `pyproject.toml`, `tox.ini`, `noxfile.py`, `Cargo.toml`, `go.mod`, `build.gradle`, `pom.xml`, `*.csproj`, `composer.json`, `Gemfile`/`Rakefile`.
+   A toolchain's standard command (e.g. `go test ./...` for `go.mod`, `cargo test` for `Cargo.toml`) may be used when nothing more specific is defined, but report it as *inferred*, not as defined.
 2. CI configuration (`.github/workflows/*`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/`, `azure-pipelines.yml`) — shows what the team really runs.
 3. Repo docs (`CLAUDE.md`, `README`, `CONTRIBUTING`) — trust, but confirm the command exists.
 

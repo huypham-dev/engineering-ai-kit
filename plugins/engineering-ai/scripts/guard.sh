@@ -81,7 +81,7 @@ is_secret_path() {
     .env.example|.env.sample|.env.template|.env.dist|.env.defaults|*.pub) return 1 ;;
     .env|.env.*|*.pem|*.key|*.p12|*.pfx|*.jks|*.keystore) return 0 ;;
     id_rsa|id_rsa.*|id_ecdsa|id_ecdsa.*|id_ed25519|id_ed25519.*|id_dsa) return 0 ;;
-    credentials|credentials.json|.netrc|.pgpass|.envrc) return 0 ;;
+    credentials|credentials.json|.netrc|.pgpass|.envrc|settings.local.json) return 0 ;;
   esac
   return 1
 }

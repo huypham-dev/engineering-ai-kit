@@ -4,7 +4,7 @@ All skills are namespaced under the plugin: type `/engineering-ai:` to list them
 
 | Skill | Invoke | Claude may trigger it? | Changes files? |
 |---|---|---|---|
-| project-onboard | `/engineering-ai:project-onboard [focus]` | Yes | No (Edit/Write removed while it runs) |
+| project-onboard | `/engineering-ai:project-onboard [focus]` | Yes | No — Edit/Write removed while it runs; no installs/builds by instruction (Bash stays available) |
 | plan-task | `/engineering-ai:plan-task <ticket>` | Yes | No (Edit/Write removed while it runs) |
 | implement-task | `/engineering-ai:implement-task [notes]` | **No** | Yes, approved scope only |
 | review-changes | `/engineering-ai:review-changes [base\|--staged]` | Yes | No (Edit/Write removed while it runs) |
@@ -17,7 +17,7 @@ Run it first in an unfamiliar repository.
 /engineering-ai:project-onboard
 /engineering-ai:project-onboard packages/web      # focus on one workspace of a monorepo
 ```
-**Input:** optional focus path. **Output:** a project profile: stack (verified, with sources), a command table (`Verified (defined, not run)`, `Not found` or `Ambiguous`), conventions, existing instructions, assumptions and open questions.
+**Input:** optional focus path inside the repo (e.g. a monorepo package). **Output:** a project profile: git state (including non-git, no-commit and detached-HEAD cases), stack (verified, with sources), a command table with status `Defined`, `Inferred`, `Docs only`, `Ambiguous` or `Not found`, conventions, existing instructions, assumptions and open questions.
 
 ## plan-task
 ```

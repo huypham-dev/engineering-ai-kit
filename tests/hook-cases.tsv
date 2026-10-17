@@ -41,6 +41,8 @@ ask	Edit	/repo/config/private.key
 ask	Write	/home/u/.ssh/id_ed25519
 ask	Read	/repo/credentials.json
 ask	Read	/repo/.envrc
+ask	Read	/repo/.claude/settings.local.json
+none	Read	/repo/.vscode/settings.json
 # --- allowed: no decision
 none	Bash	git status
 none	Bash	git diff HEAD
