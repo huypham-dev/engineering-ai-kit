@@ -27,6 +27,7 @@ or run a single stage:
 | `/engineering-ai:review-changes [base]` | Reviews the real diff; findings marked Confirmed, Potential or Nit with `file:line`. Read-only |
 | `/engineering-ai:prepare-pr` | PR title, description and checklist from real verification results. Text only |
 | `/engineering-ai:ticket-to-pr <ticket>` | All of the above, with explicit approval checkpoints |
+| `/engineering-ai:resolve-conflicts [base]` | Brings the branch up to date by **rebasing** (never merging), resolves conflicts hunk by hunk, stops on any conflict that needs a decision. Never force-pushes |
 
 Full guides: [installation & updates](docs/installation.md) · [usage](docs/usage.md) · [workflow](docs/workflow.md) · [security model](docs/security-model.md)
 
@@ -36,11 +37,11 @@ Full guides: [installation & updates](docs/installation.md) · [usage](docs/usag
 .claude-plugin/marketplace.json        # marketplace catalog (name: engineering-ai-kit)
 plugins/engineering-ai/                # the plugin
   .claude-plugin/plugin.json           # manifest and version
-  skills/<name>/SKILL.md               # 5 stage skills + ticket-to-pr orchestrator
+  skills/<name>/SKILL.md               # 5 stage skills, ticket-to-pr orchestrator, resolve-conflicts
   standards/                           # shared rules: coding, testing, code review, security, git
   adapters/                            # discovery guides: frontend, react-native, backend
   hooks/hooks.json, scripts/guard.sh   # PreToolUse guard (destructive git, PR merge, secret files)
-  evals/                               # 8 model-driven test scenarios for `claude plugin eval`
+  evals/                               # 12 model-driven test scenarios for `claude plugin eval`
 tests/run.sh, tests/hook-cases.tsv     # deterministic tests (run in CI)
 docs/                                  # installation, usage, workflow, security, testing, distribution
 ```

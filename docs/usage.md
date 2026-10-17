@@ -1,6 +1,6 @@
 # Using the skills
 
-All skills are namespaced under the plugin: type `/engineering-ai:` to list them. Three skills can also be triggered by Claude automatically when your request matches their description. `implement-task` and `ticket-to-pr` only run when **you** type them.
+All skills are namespaced under the plugin: type `/engineering-ai:` to list them. Four skills can also be triggered by Claude automatically when your request matches their description. `implement-task`, `ticket-to-pr` and `resolve-conflicts` only run when **you** type them.
 
 | Skill | Invoke | Claude may trigger it? | Changes files? |
 |---|---|---|---|
@@ -10,6 +10,7 @@ All skills are namespaced under the plugin: type `/engineering-ai:` to list them
 | review-changes | `/engineering-ai:review-changes [base\|--staged]` | Yes | No (Edit/Write removed while it runs) |
 | prepare-pr | `/engineering-ai:prepare-pr [base] [ticket]` | Yes | No (text output only) |
 | ticket-to-pr | `/engineering-ai:ticket-to-pr <ticket>` | **No** | Only in stage 4, after approval |
+| resolve-conflicts | `/engineering-ai:resolve-conflicts [base]` | **No** | Yes, after approval: rebases and edits conflicted files |
 
 ## project-onboard
 Run it first in an unfamiliar repository.
@@ -56,6 +57,21 @@ Your normal permission prompts still apply to edits and commands. Answering them
 /engineering-ai:ticket-to-pr SHOP-101: add removeItem(cart, sku) …
 ```
 See [workflow.md](workflow.md).
+
+## resolve-conflicts
+Run it on your feature branch when it has fallen behind its base branch or has conflicts with it.
+```
+/engineering-ai:resolve-conflicts                 # base = upstream default branch (origin/HEAD, origin/main, origin/master)
+/engineering-ai:resolve-conflicts origin/develop
+```
+It **always rebases** and never runs `git merge` or `git pull`. If you already started a rebase and it stopped on a conflict, run the skill and it picks up from there.
+
+1. **Plan (read-only):** commits to replay, commits the base gained, predicted conflicts (`git merge-tree`), lockfiles to regenerate, a backup branch `backup/<branch>-pre-rebase`, whether a force-push will be needed, and the verification commands. Then it asks for approval.
+2. **After "approve":** creates the backup, runs `git rebase <base>`, and resolves each stopped commit with Edit, keeping both sides' intent. Lockfiles are regenerated with the repo's own command, never hand-edited. Each `git rebase` / `--continue` triggers a guard confirmation prompt.
+3. **Stops for you** when both sides change the same logic, on delete/modify or binary conflicts, or when a check fails because of a resolution. It shows the ancestor, base and branch versions with 2–3 options and a recommendation. It never runs `--skip` or `--abort` unless you say so.
+4. **Output:** a rebase report (commits replayed, a conflict table, verification results) and the commands **for you to run**: `git push --force-with-lease` if the branch was pushed before, and `git branch -D backup/<branch>-pre-rebase` when you are happy.
+
+Remember that during a rebase "ours" is the base branch and "theirs" is your commit. The skill explains conflicts in terms of *base* and *branch* to avoid that trap.
 
 ## Tips
 - Start a fresh session per ticket, so earlier plans and approvals don't carry over by accident.

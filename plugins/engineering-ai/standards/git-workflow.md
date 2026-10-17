@@ -16,6 +16,9 @@ Read-only commands: `git status`, `git diff`, `git log`, `git show`, `git branch
 - Merging pull requests or enabling auto-merge.
 - Pushing branches or opening remote PRs on behalf of the workflow.
 
+## Syncing with the base branch
+Bring a feature branch up to date by **rebasing** onto the base, never by merging the base into it (`git merge`, `git pull`). Use `/engineering-ai:resolve-conflicts`; it plans first, keeps a backup branch, and stops on conflicts that need a decision. Never rebase the default/protected branch or a branch other people commit to without asking, and never force-push: give the developer the `git push --force-with-lease` command.
+
 ## Commits (when the developer asks for one)
 - Follow the repo's convention (check `git log --oneline -20`, commitlint config, CONTRIBUTING).
 - One logical change per commit; message explains *why*.
