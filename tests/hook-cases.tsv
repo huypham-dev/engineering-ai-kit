@@ -25,12 +25,19 @@ deny	Bash	gh pr merge 12 --squash
 deny	Bash	npm test; git reset --hard
 deny	Bash	(git clean -f)
 deny	Bash	sudo git reset --hard
+deny	Bash	GIT_EDITOR=true git push --force
+deny	Bash	FOO=1 BAR=x git reset --hard
+deny	Bash	git checkout --theirs src/cart.js
+deny	Bash	git checkout --ours -- src/cart.js
 # --- needs confirmation: ask
 ask	Bash	git push
 ask	Bash	git push -u origin feature/login
 ask	Bash	git -C repo push origin HEAD
 ask	Bash	gh pr create --fill
 ask	Bash	git rebase main
+ask	Bash	git -c core.editor=true rebase --continue
+ask	Bash	GIT_EDITOR=true git rebase --continue
+ask	Bash	git rebase --abort
 ask	Bash	cat .env
 ask	Bash	cp .env.production /tmp/x
 ask	Bash	cat ~/.ssh/id_rsa
@@ -60,6 +67,10 @@ none	Bash	git fetch origin
 none	Bash	npm run lint && npm test
 none	Bash	pnpm test --filter web
 none	Bash	echo push --force
+none	Bash	git merge-tree --write-tree --name-only --no-messages main HEAD
+none	Bash	git checkout feature/ours-vs-theirs
+none	Bash	git show :3:src/cart.js
+none	Bash	NODE_ENV=test npm test
 none	Bash	gh pr view 12
 none	Bash	cat .env.example
 none	Bash	grep -r TODO src

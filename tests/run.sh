@@ -42,7 +42,7 @@ fi
 
 # ---------------------------------------------------------------------------
 section "Skill structure"
-expected_skills="project-onboard plan-task implement-task review-changes prepare-pr ticket-to-pr"
+expected_skills="project-onboard plan-task implement-task review-changes prepare-pr ticket-to-pr resolve-conflicts"
 for s in $expected_skills; do
   f="$PLUGIN/skills/$s/SKILL.md"
   if [ ! -f "$f" ]; then bad "missing $s/SKILL.md"; continue; fi
@@ -54,7 +54,7 @@ for s in $expected_skills; do
   [ "$lines" -le 500 ] && ok || bad "$s: SKILL.md has $lines lines (limit 500)"
 done
 # side-effecting skills must be user-invoked only
-for s in implement-task ticket-to-pr; do
+for s in implement-task ticket-to-pr resolve-conflicts; do
   grep -q '^disable-model-invocation: true$' "$PLUGIN/skills/$s/SKILL.md" && ok || bad "$s must set disable-model-invocation: true"
 done
 # read-only skills must remove edit tools
@@ -76,6 +76,8 @@ grep -q 'Approval needed' "$PLUGIN/skills/plan-task/SKILL.md" && ok || bad "plan
 grep -qi 'never assume approval' "$PLUGIN/skills/ticket-to-pr/SKILL.md" && ok || bad "ticket-to-pr lacks approval rule"
 grep -q 'max 2 fix attempts' "$PLUGIN/skills/implement-task/SKILL.md" && ok || bad "implement-task lacks retry bound"
 grep -qi 'do not push branches, create remote PRs, merge' "$PLUGIN/skills/prepare-pr/SKILL.md" && ok || bad "prepare-pr lacks no-push rule"
+grep -q 'Approval needed' "$PLUGIN/skills/resolve-conflicts/SKILL.md" && ok || bad "resolve-conflicts lacks approval line"
+grep -q 'never runs `git merge`' "$PLUGIN/skills/resolve-conflicts/SKILL.md" && ok || bad "resolve-conflicts lacks rebase-only rule"
 
 # ---------------------------------------------------------------------------
 make_input() { # tool value -> hook JSON

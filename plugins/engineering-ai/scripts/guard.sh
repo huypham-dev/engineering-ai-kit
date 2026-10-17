@@ -95,7 +95,11 @@ check_segment() {
     case "$seg" in
       '('*|'{'*) seg="${seg#?}"; seg="${seg#"${seg%%[![:space:]]*}"}" ;;
       'sudo '*|'command '*|'exec '*|'time '*) seg="${seg#* }"; seg="${seg#"${seg%%[![:space:]]*}"}" ;;
-      *) break ;;
+      *)
+        # leading environment assignments, e.g. GIT_EDITOR=true git ... (unquoted values only)
+        re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+'
+        if [[ "$seg" =~ $re ]]; then seg="${seg#"${BASH_REMATCH[0]}"}"; else break; fi
+        ;;
     esac
   done
 
@@ -126,8 +130,8 @@ check_segment() {
         fi
         ;;
       checkout)
-        if [[ "$rest" =~ [[:space:]](--|\.|-f|--force)[[:space:]] ]]; then
-          deny "engineering-ai: git checkout that discards working-tree changes is blocked."
+        if [[ "$rest" =~ [[:space:]](--|\.|-f|--force|--ours|--theirs)[[:space:]] ]]; then
+          deny "engineering-ai: git checkout that discards working-tree changes is blocked (including --ours/--theirs, which drops one side of a conflict)."
         fi
         ;;
       restore)

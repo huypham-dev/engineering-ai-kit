@@ -4,6 +4,11 @@ All notable changes to the `engineering-ai` plugin. Format: [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- Skill `resolve-conflicts`: brings a feature branch up to date by rebasing onto its base (never merging). Plans first with predicted conflicts and a backup branch, resolves conflicts hunk by hunk keeping both sides' intent, stops for a decision on conflicts that need judgement, and verifies with the repo's own checks. Never force-pushes.
+- Eval cases `09-onboard-monorepo-focus` and `10-onboard-tricky-git-state`.
+- Eval cases `11-rebase-conflict` (plan and approval gate) and `12-rebase-decision-conflict` (stop on a semantic conflict mid-rebase).
+
 ### Fixed
 - `project-onboard`: the focus path now scopes manifest, command and convention discovery (monorepos); `ticket-to-pr` no longer passes ticket text as the focus.
 - `project-onboard`: command status is now `Defined` / `Inferred` / `Docs only` / `Ambiguous` / `Not found` instead of a single "Verified" label; `testing.md` marks toolchain defaults such as `go test ./...` as inferred.
@@ -11,9 +16,8 @@ All notable changes to the `engineering-ai` plugin. Format: [Keep a Changelog](h
 - `project-onboard`: explicit handling of non-git directories, repositories without commits and detached HEAD.
 - `project-onboard`: also reads `CLAUDE.local.md`, `.claude/CLAUDE.md` and `.claude/rules/`.
 - `project-onboard`: forbids installs, builds and code generation explicitly; pre-approves read-only git commands.
-
-### Added
-- Eval cases `09-onboard-monorepo-focus` and `10-onboard-tricky-git-state`.
+- Guard: commands prefixed with environment assignments (e.g. `GIT_EDITOR=true git push --force`) bypassed every git rule; leading `VAR=value` words are now skipped before matching.
+- Guard: `git checkout --ours/--theirs <path>` (without `--`) was allowed; it is now denied like other discarding checkouts.
 
 ## [0.1.0] - 2026-10-16
 First pilot release.
