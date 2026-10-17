@@ -10,86 +10,72 @@ allowed-tools: Read(/${CLAUDE_PLUGIN_ROOT}/**)
 
 Base: $ARGUMENTS
 
-This skill always uses `git rebase`. It never runs `git merge` or `git pull` (which merges by default) to sync with the base. In this first turn, Read `${CLAUDE_PLUGIN_ROOT}/standards/git-workflow.md`, `${CLAUDE_PLUGIN_ROOT}/standards/testing.md` and `${CLAUDE_PLUGIN_ROOT}/standards/coding.md` (reading them is pre-approved only during this turn) and follow them.
+This skill always uses `git rebase`. It never runs `git merge` or `git pull` (which merges by default) to sync with the base. In this first turn, Read `${CLAUDE_PLUGIN_ROOT}/skills/resolve-conflicts/references/patterns.md`, `${CLAUDE_PLUGIN_ROOT}/standards/git-workflow.md`, `${CLAUDE_PLUGIN_ROOT}/standards/testing.md` and `${CLAUDE_PLUGIN_ROOT}/standards/coding.md`. Reading them is pre-approved only during this turn, and resolving happens in a later turn.
 
-## Rebase vocabulary — get this right
-During a rebase the sides are **inverted** compared to a merge:
-- `HEAD` / "ours" / the `<<<<<<< HEAD` block / stage `:2:` = the **base branch** plus the commits already replayed.
-- "theirs" / the `>>>>>>> <sha> (<subject>)` block / stage `:3:` = **the developer's commit being replayed**.
-- Stage `:1:` = the common ancestor.
-Read a side with `git show :1:<path>`, `git show :2:<path>`, `git show :3:<path>` (read-only).
+## Rebase vocabulary
+The sides are **inverted** compared to a merge: `HEAD` / "ours" / `<<<<<<< HEAD` / stage `:2:` is the **base** plus the commits already replayed; "theirs" / `>>>>>>> <sha>` / stage `:3:` is **the developer's commit being replayed**; `:1:` is the common ancestor. Read a side with `git show :<n>:<path>`.
 
 ## Hard rules
-- Never: `git merge`, `git pull`, `git push` of any kind (tell the developer the command instead), `git reset --hard`, `git checkout --ours/--theirs`, `git restore` of files, `git rebase -i`, strategy options that pick a side wholesale (`-X ours`, `-X theirs`, `-s ours`), `--no-verify`, changing git config (`rerere`, `merge.conflictStyle`, …).
-- Resolve conflicts with the Edit tool, hunk by hunk. Do not replace a whole conflicted file with one side, and do not write files through shell redirection.
-- Every resolution keeps the intent of **both** sides, or stops for a decision (see Stop conditions). Never silently drop a change from either side.
-- Change only conflicted files, plus regenerated lockfiles or generated files (see 4c). Do not refactor, reformat or "improve" code while resolving.
-- Invent nothing. The resolved code contains only what is on one side or the other, plus the minimum glue to combine them (one merged import line, a reordered call). New behaviour that hides a clash is a decision for the developer (see Stop conditions).
-- Do not run `git rebase --skip` or `git rebase --abort` without the developer's explicit go-ahead.
-- Continue with `git -c core.editor=true rebase --continue` so no editor opens. Don't put an environment variable (`GIT_EDITOR=…`) in front of git.
+- Never: `git merge`, `git pull`, any `git push` (give the developer the command), `git reset --hard`, `git checkout --ours/--theirs`, `git restore` of files, `git rebase -i`, `-X ours/theirs`, `-s ours`, `--no-verify`, changing git config.
+- Resolve with the Edit tool, hunk by hunk. Never replace a whole file with one side or write through shell redirection.
+- Keep the intent of **both** sides, or stop for a decision. Never silently drop a change.
+- Invent nothing: the result holds only what one side or the other has, plus the minimum glue to combine them.
+- Touch only conflicted files and regenerated lockfiles or generated files. No refactoring or reformatting.
+- No `git rebase --skip` or `--abort` without the developer's go-ahead.
+- Continue with `git -c core.editor=true rebase --continue` (no `GIT_EDITOR=…` prefix).
 
 ## 1. Inspect (read-only)
 1. `git status`, `git branch --show-current`, `git log --oneline -5`.
-2. **A rebase is already in progress** (status says so): the developer started it, so there is no plan or backup yet, and `git branch --show-current` prints nothing. Recover the facts from the rebase state directory (`git rev-parse --git-path rebase-merge`, or `rebase-apply` if that one exists): Read its `head-name` (`refs/heads/<branch>`), `onto` (the commit being rebased onto) and `orig-head` (the branch tip before the rebase). Use `onto` as `<base>` for the rest of this skill. If a base argument was given or a default was chosen in step 4 and it does not resolve to `onto` (`git rev-parse <ref>`), say so and ask which one is meant. Then report a short plan: the current state (which commit is being replayed, conflicted files, your read-only analysis from 4a), the backup to create at `orig-head` (`git branch <backup> <orig-head sha>`, named as in step 5), lockfile regeneration commands and verification commands (found as in step 5). Once they confirm, that confirmation is the approved plan: create the backup, then continue at step 4. **A merge is in progress:** say that this skill resolves by rebasing, and ask whether they want to abort the merge themselves (`git merge --abort`). Do not abort it yourself.
-3. Stop and ask if:
-   - the working tree has uncommitted or untracked changes. A rebase needs a clean tree, and you never stash, commit or discard them on your own. List them and offer the options (the developer commits them, or approves `git stash push -u` with a later `git stash pop`);
-   - the current branch is the default/protected branch (`main`, `master`, `develop`, release branches). Rebasing those rewrites shared history.
-4. Determine the base: the argument if given; otherwise the upstream default branch (`git symbolic-ref refs/remotes/origin/HEAD`, else `origin/main` or `origin/master` if present). Say which base you chose and why. If the remote-tracking ref may be stale, propose `git fetch origin <base-branch>` as part of the plan. Do not fetch before approval.
-5. Gather facts:
-   - Commits to replay: `git log --oneline --reverse <base>..HEAD`. Commits the base has gained: `git log --oneline HEAD..<base>`. If the first list is empty, there is nothing to rebase: report it and stop. If the second list is empty, the branch is already up to date: report it and stop.
-   - Predicted conflicts: `git merge-tree --write-tree --name-only --no-messages <base> HEAD` (git ≥ 2.38, read-only; exit code 1 means conflicts, and the paths after the first line are the conflicted files). If it is unavailable, say "not predicted". This merges the final tips only; a rebase replays commit by commit, so an intermediate commit can still conflict (for example one that a later commit reverts). Say so in the plan.
-   - Shared branch? Check whether the branch has an upstream (`git rev-parse --abbrev-ref @{u}`) and who else committed on it (`git log --format='%an' <base>..HEAD | sort -u`). A rebased branch that was already pushed needs a force-push, which this plugin never does. If other people have commits on it, recommend against rebasing and ask.
-   - Lockfiles or generated files among the predicted conflicts, and the repo's command to regenerate them (from package scripts, docs or CONTRIBUTING; never invented).
-   - Backup name: `backup/<branch>-pre-rebase`. If that branch already exists (`git rev-parse --verify --quiet refs/heads/backup/<branch>-pre-rebase`), it is from an earlier run: do not reuse, overwrite or delete it. Pick a free name with a date suffix (`backup/<branch>-pre-rebase-<YYYYMMDD>`) and use it as `<backup>` everywhere below.
+2. **Rebase already in progress** (the developer started it): read `head-name`, `onto` and `orig-head` from `$(git rev-parse --git-path rebase-merge)` (or `rebase-apply`). Use `onto` as `<base>`; if a given or default base doesn't resolve to it, ask which is meant. Report a short plan (commit being replayed, conflicted files, your 4a analysis, backup at `orig-head`, regeneration and verification commands). The developer's confirmation is the approved plan: create the backup, then go to step 4.
+   **Merge in progress:** say this skill rebases, and ask whether they want to run `git merge --abort` themselves.
+3. Stop and ask if the tree has uncommitted or untracked changes (never stash, commit or discard them yourself; offer committing, or an approved `git stash push -u` and later `git stash pop`), or if the branch is the default/protected branch.
+4. Base: the argument, else `origin/HEAD`, else `origin/main` / `origin/master`. Say why. Propose `git fetch origin <base-branch>` if the ref may be stale; fetch only after approval.
+5. Facts for the plan:
+   - `git log --oneline --reverse <base>..HEAD` (to replay) and `git log --oneline HEAD..<base>` (base gained). Either empty → report and stop.
+   - Predicted conflicts: `git merge-tree --write-tree --name-only --no-messages <base> HEAD` (git ≥ 2.38; exit 1 = conflicts, paths after the first line). It compares final tips only, so intermediate commits may still conflict.
+   - Shared branch: an upstream (`git rev-parse --abbrev-ref @{u}`) means a force-push afterwards; other authors (`git log --format='%an' <base>..HEAD | sort -u`) → recommend against and ask.
+   - Lockfiles or generated files among the conflicts, with the repo's own regeneration command (never invented).
+   - Backup: `backup/<branch>-pre-rebase`, or with a `-<YYYYMMDD>` suffix if that branch exists. Never reuse or overwrite an old one.
 
 ## 2. Plan and wait for approval
 ```
 ## Rebase plan: <branch> onto <base>   Status: READY FOR APPROVAL | BLOCKED — <reason>
-Base: <ref> (<why this base>)  · fetch first: yes (`git fetch origin <base-branch>`) | no
+Base: <ref> (<why>)  · fetch first: yes (`git fetch origin <base-branch>`) | no
 Commits to replay (<n>): <sha> <subject> …
 Base has gained (<m>): <sha> <subject> …
-Predicted conflicts: <paths> | none | not predicted (final tips only; intermediate commits may still conflict)
-Lockfiles / generated files: <path> → regenerate with `<command>` (<source>) | none
-Backup: `git branch <backup>` (restore point; the developer deletes it later)
-Pushed already: no | yes → after the rebase YOU run `git push --force-with-lease`; this plugin never force-pushes
-Other authors on the branch: none | <names> → rebasing will disrupt them
-Verification after the rebase: <discovered commands> | Not found
+Predicted conflicts: <paths> | none | not predicted (final tips only)
+Lockfiles / generated files: <path> → `<command>` (<source>) | none
+Backup: `git branch <backup>`
+Pushed already: no | yes → YOU run `git push --force-with-lease` afterwards
+Other authors on the branch: none | <names>
+Verification: <discovered commands> | Not found
 ```
 End with: **Approval needed:** reply "approve" to create the backup branch, rebase onto `<base>`, resolve mechanical conflicts, stage resolved files and continue. I will stop on any conflict that needs a decision.
 
-Do not run anything that changes the repository before an explicit approval.
+Change nothing in the repository before an explicit approval.
 
-## 3. Start the rebase (after approval)
-1. Fetch if the plan said so. Create the backup branch.
-2. `git rebase <base>`. The guard asks the developer to confirm each rebase command; that prompt is expected.
-3. If it finishes without conflicts, go to step 5.
+## 3. Start (after approval)
+Fetch if planned, create the backup, run `git rebase <base>` (the guard's confirmation prompt is expected). No conflicts → step 5.
 
 ## 4. Resolve, one stopped commit at a time
-a. **Understand both sides before editing.** Identify the commit being replayed (`git log -1 REBASE_HEAD` and `git show REBASE_HEAD`; not `git rebase --show-current-patch`, which the guard treats like any other rebase and asks to confirm), the conflicted paths (`git diff --name-only --diff-filter=U`), and what the base changed in each path (`git log --oneline <merge-base>..<base> -- <path>`, where `<merge-base>` comes from `git merge-base ORIG_HEAD <base>`). Read every conflict block with enough surrounding code.
-   **Then read why each side exists before touching a hunk.** Read the full commit messages on both sides (`git log -1 --format=%B REBASE_HEAD`, and `git log --format='%h %s%n%b' <merge-base>..<base> -- <path>` for the base). When a message references a PR or issue (`#123`, a URL), read it if a read-only `gh pr view` / `gh issue view` works; otherwise say it was not read. You are choosing between two intents, not two blocks of text.
-b. **Classify each hunk:**
-   - *Mechanical*: the two sides make independent changes (different functions added at the same spot, imports, list entries, a rename on one side next to an edit on the other). Combine them so both survive, in the order the code needs.
-   - *Needs a decision*: both sides change the same logic or behaviour, one side deletes or moves what the other modifies, or the right result depends on product intent. **Stop** (see below).
-c. **Lockfiles and generated files:** never hand-edit them. Resolve their sources (e.g. the manifest) first, then regenerate them with the command from the approved plan. A regeneration that installs or upgrades dependencies beyond what the two sides already declare needs approval.
-d. **Binary files:** stop and ask which version to keep. Writing one side over the file is blocked by the guard and by the hard rules, so give the developer the command to run themselves: `git checkout REBASE_HEAD -- <path>` keeps the branch's version, `git checkout HEAD -- <path>` keeps the base's. Both also stage the file. Once they confirm, check `git status` and continue with 4e.
-e. **Check the result before continuing:** no conflict markers remain (`git diff --check`, and search the resolved files for `<<<<<<<`, `=======`, `>>>>>>>`), and the code still parses. Then run the narrowest discovered checks that cover the resolved files (their tests, plus typecheck or lint when they are fast) **before** `rebase --continue`, not only at the end. A failure caused by your resolution: fix the resolution, max 2 attempts, then stop. A failure you cannot attribute (for example, this intermediate commit never passed on its own): report it with the evidence and ask before continuing.
-f. `git add <resolved paths>` (only those paths), then `git -c core.editor=true rebase --continue`. Before continuing, state in one or two lines per file how you resolved it, citing the source of each side's intent (commit subject, PR or issue). If anything from either side did not survive (only after the developer chose that in a decision stop), name what was dropped and why.
-g. If git reports the commit became empty because the base already contains its change, show the evidence (the base commit that contains it) and ask before `git rebase --skip`.
-h. Repeat for the next stopped commit.
+a. **Read both sides and why they exist.** `git show REBASE_HEAD` and `git log -1 --format=%B REBASE_HEAD` for the branch; `git log --format='%h %s%n%b' <merge-base>..<base> -- <path>` for the base (`<merge-base>` = `git merge-base ORIG_HEAD <base>`). Read PRs or issues the messages reference with read-only `gh pr view` / `gh issue view`, or say they weren't read. Conflicted paths: `git diff --name-only --diff-filter=U`. Don't use `git rebase --show-current-patch` (the guard asks to confirm it).
+b. **Classify each conflict** using `references/patterns.md`: *mechanical* (independent changes, combined by its patterns) or *needs a decision* → stop. If the developer already decided a similar conflict, apply the same choice and say so; ask again when it differs.
+c. **Lockfiles and generated files:** resolve their sources first, then regenerate with the planned command. Never hand-edit them. Installing or upgrading beyond what both sides declare needs approval.
+d. **Check before continuing:** no markers (`git diff --check`, search for `<<<<<<<`, `=======`, `>>>>>>>`), then the narrowest discovered checks covering the resolved files. A failure your resolution caused: fix it, max 2 attempts, then stop. A failure you can't attribute: report the evidence and ask.
+e. `git add <resolved paths>`, then continue. Before continuing, give one line per file: how it was resolved and the source of each side's intent; name anything dropped (only after a decision) and why.
+f. Commit became empty because the base already has it: show the evidence and ask before `--skip`.
 
 ## 5. Verify
-1. Confirm the rebase finished: `git status` shows no rebase in progress, and `git log --oneline <base>..HEAD` lists the replayed commits.
-2. Compare content with the backup. `git diff <backup> HEAD --stat` should show only the base's changes plus your resolutions. Explain anything else.
-3. Run the repo's verification commands per `${CLAUDE_PLUGIN_ROOT}/standards/testing.md`, narrowest first. Report every result honestly: PASSED / FAILED / NOT RUN / COULD NOT RUN.
-4. If a check fails, run the same check on `<base>`'s state only if that is cheap and safe (no checkout over the developer's work). A check that already fails on the base is a pre-existing failure: report it. A failure caused by a resolution: diagnose it, then stop and report the options. Do not rewrite history to fix it.
+1. `git status` shows no rebase in progress; `git log --oneline <base>..HEAD` lists the replayed commits.
+2. `git diff <backup> HEAD --stat` shows only the base's changes plus your resolutions; explain anything else.
+3. Run the verification commands per `${CLAUDE_PLUGIN_ROOT}/standards/testing.md`; report PASSED / FAILED / NOT RUN / COULD NOT RUN. A failure that also happens on the base is pre-existing; one caused by a resolution → stop with options. Never rewrite history to fix it.
 
-## Stop conditions — stop and report, leave the rebase as it is
-- A hunk needs a decision (4b). Show the ancestor, base and branch versions of that hunk side by side, explain what each side intended, quoting its commit message, PR or issue, propose 2–3 concrete resolutions with trade-offs, and recommend one. Wait for the developer's choice.
-- Binary file conflicts, delete/modify conflicts, or a lockfile that cannot be regenerated.
-- A verification failure after the rebase that comes from a resolution.
-- Anything outside the approved plan (a different base, extra files, new dependencies).
+## Stop conditions — stop, leave the rebase as it is
+- A conflict needs a decision: show the ancestor, base and branch versions, each side's intent quoted from its commit, PR or issue, and 2–3 resolutions with trade-offs and a recommendation.
+- The cases `references/patterns.md` marks as stop (binary, delete/modify without a clear rename, both-added, submodule, conflicting config values), or a lockfile that can't be regenerated.
+- A verification failure caused by a resolution, or anything outside the approved plan.
 
-On every stop, remind the developer how to resume (reply with a decision) and how to undo (`git rebase --abort` while in progress, or `<backup>` afterwards). Run either only if they ask.
+Each stop says how to resume (reply with a decision) and undo (`git rebase --abort` while in progress, `<backup>` afterwards). Run either only on request.
 
 ## Output
 ```
@@ -107,5 +93,5 @@ Verification:
 |---|---|---|---|
 Next steps (for you to run):
 - `git push --force-with-lease` (only if the branch was pushed before)
-- `git branch -D <backup>` once you are happy with the result (`-D` is needed because the old commits are not part of the rebased branch)
+- `git branch -D <backup>` when you are happy (`-D`: the old commits are not in the rebased branch)
 ```
