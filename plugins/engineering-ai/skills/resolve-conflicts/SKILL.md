@@ -24,6 +24,7 @@ Read a side with `git show :1:<path>`, `git show :2:<path>`, `git show :3:<path>
 - Resolve conflicts with the Edit tool, hunk by hunk. Do not replace a whole conflicted file with one side, and do not write files through shell redirection.
 - Every resolution keeps the intent of **both** sides, or stops for a decision (see Stop conditions). Never silently drop a change from either side.
 - Change only conflicted files, plus regenerated lockfiles or generated files (see 4c). Do not refactor, reformat or "improve" code while resolving.
+- Invent nothing. The resolved code contains only what is on one side or the other, plus the minimum glue to combine them (one merged import line, a reordered call). New behaviour that hides a clash is a decision for the developer (see Stop conditions).
 - Do not run `git rebase --skip` or `git rebase --abort` without the developer's explicit go-ahead.
 - Continue with `git -c core.editor=true rebase --continue` so no editor opens. Don't put an environment variable (`GIT_EDITOR=…`) in front of git.
 
@@ -65,13 +66,14 @@ Do not run anything that changes the repository before an explicit approval.
 
 ## 4. Resolve, one stopped commit at a time
 a. **Understand both sides before editing.** Identify the commit being replayed (`git log -1 REBASE_HEAD` and `git show REBASE_HEAD`; not `git rebase --show-current-patch`, which the guard treats like any other rebase and asks to confirm), the conflicted paths (`git diff --name-only --diff-filter=U`), and what the base changed in each path (`git log --oneline <merge-base>..<base> -- <path>`, where `<merge-base>` comes from `git merge-base ORIG_HEAD <base>`). Read every conflict block with enough surrounding code.
+   **Then read why each side exists before touching a hunk.** Read the full commit messages on both sides (`git log -1 --format=%B REBASE_HEAD`, and `git log --format='%h %s%n%b' <merge-base>..<base> -- <path>` for the base). When a message references a PR or issue (`#123`, a URL), read it if a read-only `gh pr view` / `gh issue view` works; otherwise say it was not read. You are choosing between two intents, not two blocks of text.
 b. **Classify each hunk:**
    - *Mechanical*: the two sides make independent changes (different functions added at the same spot, imports, list entries, a rename on one side next to an edit on the other). Combine them so both survive, in the order the code needs.
    - *Needs a decision*: both sides change the same logic or behaviour, one side deletes or moves what the other modifies, or the right result depends on product intent. **Stop** (see below).
 c. **Lockfiles and generated files:** never hand-edit them. Resolve their sources (e.g. the manifest) first, then regenerate them with the command from the approved plan. A regeneration that installs or upgrades dependencies beyond what the two sides already declare needs approval.
 d. **Binary files:** stop and ask which version to keep. Writing one side over the file is blocked by the guard and by the hard rules, so give the developer the command to run themselves: `git checkout REBASE_HEAD -- <path>` keeps the branch's version, `git checkout HEAD -- <path>` keeps the base's. Both also stage the file. Once they confirm, check `git status` and continue with 4e.
-e. **Check the result:** no conflict markers remain (`git diff --check`, and search the resolved files for `<<<<<<<`, `=======`, `>>>>>>>`). The code still parses. If the repo has a fast syntax, type or lint check for these files, run it.
-f. `git add <resolved paths>` (only those paths), then `git -c core.editor=true rebase --continue`. Before continuing, state in one or two lines per file how you resolved it.
+e. **Check the result before continuing:** no conflict markers remain (`git diff --check`, and search the resolved files for `<<<<<<<`, `=======`, `>>>>>>>`), and the code still parses. Then run the narrowest discovered checks that cover the resolved files (their tests, plus typecheck or lint when they are fast) **before** `rebase --continue`, not only at the end. A failure caused by your resolution: fix the resolution, max 2 attempts, then stop. A failure you cannot attribute (for example, this intermediate commit never passed on its own): report it with the evidence and ask before continuing.
+f. `git add <resolved paths>` (only those paths), then `git -c core.editor=true rebase --continue`. Before continuing, state in one or two lines per file how you resolved it, citing the source of each side's intent (commit subject, PR or issue). If anything from either side did not survive (only after the developer chose that in a decision stop), name what was dropped and why.
 g. If git reports the commit became empty because the base already contains its change, show the evidence (the base commit that contains it) and ask before `git rebase --skip`.
 h. Repeat for the next stopped commit.
 
@@ -82,7 +84,7 @@ h. Repeat for the next stopped commit.
 4. If a check fails, run the same check on `<base>`'s state only if that is cheap and safe (no checkout over the developer's work). A check that already fails on the base is a pre-existing failure: report it. A failure caused by a resolution: diagnose it, then stop and report the options. Do not rewrite history to fix it.
 
 ## Stop conditions — stop and report, leave the rebase as it is
-- A hunk needs a decision (4b). Show the ancestor, base and branch versions of that hunk side by side, explain what each side intended (with the commit subjects), propose 2–3 concrete resolutions with trade-offs, and recommend one. Wait for the developer's choice.
+- A hunk needs a decision (4b). Show the ancestor, base and branch versions of that hunk side by side, explain what each side intended, quoting its commit message, PR or issue, propose 2–3 concrete resolutions with trade-offs, and recommend one. Wait for the developer's choice.
 - Binary file conflicts, delete/modify conflicts, or a lockfile that cannot be regenerated.
 - A verification failure after the rebase that comes from a resolution.
 - Anything outside the approved plan (a different base, extra files, new dependencies).
@@ -94,10 +96,11 @@ On every stop, remind the developer how to resume (reply with a decision) and ho
 ## Rebase report   Status: COMPLETE | STOPPED — <reason> | ABORTED (on request)
 Branch: <branch>  onto <base> @ <sha>   Backup: <backup>
 Commits replayed: <n>/<total>   Skipped (approved): none | <sha subject — why>
+Dropped (approved): none | <what, from which side — why>
 Conflicts:
 | Commit | File | Kind | Resolution |
 |---|---|---|---|
-| a1b2c3 add removeItem | src/cart.js | mechanical | kept base's `clearCart` and branch's `removeItem` |
+| a1b2c3 add removeItem | src/cart.js | mechanical | kept base's `clearCart` (9f8e7d "add clearCart") and branch's `removeItem` (a1b2c3) |
 | d4e5f6 tax in total | src/cart.js | decision | STOPPED — see options below |
 Verification:
 | Check | Command | Result | Evidence |
