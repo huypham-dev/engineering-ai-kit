@@ -116,26 +116,6 @@ section "Guard hook (no parser available)"
 out=$(echo '{}' | ENGINEERING_AI_GUARD_PARSER=none bash "$GUARD" 2>&1 >/dev/null); rc=$?
 if [ $rc -eq 1 ] && printf '%s' "$out" | grep -q 'guard inactive'; then ok; else bad "expected non-blocking warning (exit 1), got exit $rc"; fi
 
-# ---------------------------------------------------------------------------
-section "Eval cases have a prompt and graders"
-for d in "$PLUGIN"/evals/*/; do
-  [ -d "$d" ] || continue
-  n=$(basename "$d")
-  [ "$n" = "results" ] && continue
-  { [ -f "$d/prompt.md" ] || [ -f "$d/case.yaml" ]; } && ok || bad "eval $n: no prompt.md or case.yaml"
-  ls "$d"/graders/*.md >/dev/null 2>&1 && ok || bad "eval $n: no graders/*.md"
-done
-
-section "Eval case.yaml files parse"
-if have python3 && python3 -c 'import yaml' 2>/dev/null; then
-  for f in "$PLUGIN"/evals/*/case.yaml; do
-    python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1])); assert d["schema_version"]=="1.1" and d["name"]' "$f" 2>/dev/null \
-      && ok || bad "invalid case.yaml: ${f#$ROOT/}"
-  done
-else
-  skip "python3 with PyYAML not available"
-fi
-
 echo
 echo "Summary: $pass passed, $fail failed, $notrun not run"
 [ $fail -eq 0 ]

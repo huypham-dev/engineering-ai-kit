@@ -30,7 +30,7 @@ If the repository moves to a non-GitHub host, users add it by full URL (`claude 
 ## Release process
 
 1. Make sure CI on `main` is green (`tests/run.sh`).
-2. Run the model-driven evals ([testing.md](testing.md)) and note the results in the release PR.
+2. Run the manual evaluation procedure ([testing.md](testing.md)) and note the results in the release PR.
 3. Bump `version` in `plugins/engineering-ai/.claude-plugin/plugin.json`.
 4. Move `CHANGELOG.md` entries from **Unreleased** into a new version section with today's date.
 5. Merge to `main` through a reviewed PR.

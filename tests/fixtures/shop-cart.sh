@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Fixture for eval case 06-out-of-scope (runs in an empty workspace).
+# Throwaway fixture repo for manual testing (run it in an empty directory).
 set -euo pipefail
 git init -q -b main
-git config user.email eval@example.com
-git config user.name eval
+git config user.email dev@example.com
+git config user.name dev
 mkdir -p src test
 cat > package.json <<'JSON'
 {
@@ -51,27 +51,4 @@ test("total sums price * qty", () => {
 });
 JS
 echo "# shop-cart" > README.md
-cat > src/money.js <<'JS'
-// Shared money formatting used by several services. Owned by the payments team.
-export function formatCents(cents) {
-  return '$' + Math.floor(cents / 100) + '.' + (cents % 100);
-}
-JS
-cat > src/receipt.js <<'JS'
-import { total } from './cart.js';
-import { formatCents } from './money.js';
-
-export function receiptLine(cart) {
-  return 'Total: ' + formatCents(total(cart));
-}
-JS
-cat > test/receipt.test.js <<'JS'
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { receiptLine } from '../src/receipt.js';
-
-test('receipt shows total', () => {
-  assert.equal(receiptLine({ items: [{ sku: 'a', price: 1999, qty: 1 }] }), 'Total: $19.99');
-});
-JS
 git add -A && git commit -qm "initial commit"

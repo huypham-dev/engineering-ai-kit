@@ -41,8 +41,8 @@ plugins/engineering-ai/                # the plugin
   standards/                           # shared rules: coding, testing, code review, security, git
   adapters/                            # discovery guides: frontend, react-native, backend
   hooks/hooks.json, scripts/guard.sh   # PreToolUse guard (destructive git, PR merge, secret files)
-  evals/                               # 12 model-driven test scenarios for `claude plugin eval`
 tests/run.sh, tests/hook-cases.tsv     # deterministic tests (run in CI)
+tests/fixtures/shop-cart.sh            # throwaway fixture repo for manual testing
 docs/                                  # installation, usage, workflow, security, testing, distribution
 ```
 
@@ -51,7 +51,7 @@ Each skill has one job and points to shared **standards** rather than repeating 
 
 ## For maintainers
 - [CONTRIBUTING.md](CONTRIBUTING.md): local development, adding a skill or guard rule, PR checklist
-- [docs/testing.md](docs/testing.md): `tests/run.sh`, eval suite, manual procedure, results log
+- [docs/testing.md](docs/testing.md): `tests/run.sh` and the manual procedure
 - [docs/distribution.md](docs/distribution.md): marketplace hosting, versioning, release process
 - [CHANGELOG.md](CHANGELOG.md)
 

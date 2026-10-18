@@ -6,8 +6,10 @@ All notable changes to the `engineering-ai` plugin. Format: [Keep a Changelog](h
 
 ### Added
 - Skill `resolve-conflicts`: brings a feature branch up to date by rebasing onto its base (never merging). Plans first with predicted conflicts and a backup branch, resolves conflicts hunk by hunk keeping both sides' intent, stops for a decision on conflicts that need judgement, and verifies with the repo's own checks. Never force-pushes. Before resolving it reads why each side exists (commit messages, linked PRs and issues), invents nothing that was on neither side, names anything dropped, and runs the narrowest checks before each `rebase --continue`; these steps are adapted from the archived `resolving-merge-conflicts` skill in [mattpocock/skills](https://github.com/mattpocock/skills) (MIT). Per-kind conflict patterns (imports, tests, fields, config, renamed files, both-added, submodules) and reuse of the developer's earlier decisions live in `references/patterns.md`, adapted from [antinomyhq/forge](https://github.com/antinomyhq/forge) (Apache-2.0).
-- Eval cases `09-onboard-monorepo-focus` and `10-onboard-tricky-git-state`.
-- Eval cases `11-rebase-conflict` (plan and approval gate) and `12-rebase-decision-conflict` (stop on a semantic conflict mid-rebase).
+- `tests/fixtures/shop-cart.sh`: throwaway fixture repo for manual testing.
+
+### Removed
+- The model-driven eval suite (`plugins/engineering-ai/evals/`). Testing is now `tests/run.sh` plus the manual procedure in `docs/testing.md`.
 
 ### Fixed
 - `project-onboard`: the focus path now scopes manifest, command and convention discovery (monorepos); `ticket-to-pr` no longer passes ticket text as the focus.

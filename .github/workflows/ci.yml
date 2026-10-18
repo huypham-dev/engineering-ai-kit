@@ -11,7 +11,7 @@ permissions:
 jobs:
   deterministic-checks:
     # No model calls and no secrets: manifest validation, skill structure,
-    # guard hook unit tests. Model-driven evals run manually (see docs/testing.md).
+    # guard hook unit tests. The manual procedure is in docs/testing.md.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

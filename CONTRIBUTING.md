@@ -14,22 +14,22 @@ claude --plugin-dir ./plugins/engineering-ai     # loads your working copy for t
 # edit files, then in the session:
 /reload-plugins
 ```
-Try changes on a throwaway fixture repo: any `plugins/engineering-ai/evals/<case>/scaffold.sh` builds one (`mkdir /tmp/x && cd /tmp/x && bash <path>/scaffold.sh`).
+Try changes on a throwaway fixture repo: `mkdir /tmp/x && cd /tmp/x && bash <repo>/tests/fixtures/shop-cart.sh`.
 
 ## Making changes
 | Change | Also do |
 |---|---|
 | Edit a skill | Keep it under 500 lines; keep the frontmatter `name` equal to the directory name; update `docs/usage.md` if inputs or outputs change |
-| Add a skill | Add it to `expected_skills` in `tests/run.sh`, document it in `docs/usage.md` and the README table, consider an eval case |
+| Add a skill | Add it to `expected_skills` in `tests/run.sh`, document it in `docs/usage.md` and the README table |
 | Change a standard or adapter | Check which skills reference it (`grep -r standards/<file> plugins/`) |
 | Change the guard | Add rows to `tests/hook-cases.tsv` first, including look-alike commands that must *not* match. Keep it bash 3.2-compatible (macOS): POSIX character classes, no `\s`/`\b`. Update `docs/security-model.md` |
-| Change workflow stop conditions | Update `docs/workflow.md` and the eval cases that cover them |
+| Change workflow stop conditions | Update `docs/workflow.md` and the manual procedure in `docs/testing.md` |
 
 ## Before opening a PR
 1. `tests/run.sh` passes (CI runs it too).
-2. For skill or workflow behaviour changes, run the evals (see `docs/testing.md`) and paste the summary table into the PR. If you didn't run them, say so.
+2. For skill or workflow behaviour changes, run the manual procedure (see `docs/testing.md`) and note the outcome in the PR. If you didn't run it, say so.
 3. Add an entry under **Unreleased** in `CHANGELOG.md`.
 4. Don't bump `version` in feature PRs; the release PR does that (see `docs/distribution.md`).
 
 ## Commit and PR conventions
-Use [Conventional Commits](https://www.conventionalcommits.org): `feat(skills): …`, `fix(guard): …`, `docs: …`, `test(evals): …`. One logical change per PR. Changes to the guard or the security docs need a second reviewer.
+Use [Conventional Commits](https://www.conventionalcommits.org): `feat(skills): …`, `fix(guard): …`, `docs: …`, `test: …`. One logical change per PR. Changes to the guard or the security docs need a second reviewer.
